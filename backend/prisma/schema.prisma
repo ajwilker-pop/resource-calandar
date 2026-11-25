@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TEAM_LEAD
+  PROJECT_MANAGER
+}
+
+enum ResourceType {
+  Person
+  Equipment
+  Room
+}
+
+enum TaskType {
+  Banner
+  Emailer
+  IVA
+  Website
+  Screenshot
+}
+
+enum BookingRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  username     String     @unique
+  passwordHash String
+  legacyRole   Role       @map("role")
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  resources    Resource[] @relation("ResourceCreator")
+  bookings     Booking[]  @relation("BookingCreator")
+  bookingRequests BookingRequest[] @relation("BookingRequestCreator")
+  reviewedBookingRequests BookingRequest[] @relation("BookingRequestReviewer")
+  roles        UserRole[]
+}
+
+model UserRole {
+  id         String   @id @default(cuid())
+  userId     String
+  role       Role
+  assignedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@index([role])
+}
+
+model Resource {
+  id          String       @id @default(cuid())
+  name        String
+  type        ResourceType
+  description String       @default("")
+  isActive    Boolean      @default(true)
+  createdBy   String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  creator     User         @relation("ResourceCreator", fields: [createdBy], references: [id])
+  bookings    Booking[]
+  bookingRequests BookingRequest[]
+}
+
+model Booking {
+  id            String   @id @default(cuid())
+  resourceId    String
+  taskNumber    String
+  taskType      TaskType?
+  taskTitle     String?
+  startDateTime DateTime
+  endDateTime   DateTime
+  isAllDay      Boolean  @default(false)
+  notes         String   @default("")
+  createdBy     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  resource      Resource @relation(fields: [resourceId], references: [id])
+  creator       User     @relation("BookingCreator", fields: [createdBy], references: [id])
+
+  @@index([resourceId, startDateTime, endDateTime])
+}
+
+model BookingRequest {
+  id              String               @id @default(cuid())
+  resourceId      String?
+  taskNumber      String
+  taskType        TaskType
+  taskTitle       String?
+  startDateTime   DateTime
+  endDateTime     DateTime
+  isAllDay        Boolean              @default(false)
+  notes           String               @default("")
+  status          BookingRequestStatus @default(PENDING)
+  timeZone        String?
+  createdBy       String
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  resource        Resource?            @relation(fields: [resourceId], references: [id])
+  requester       User                 @relation("BookingRequestCreator", fields: [createdBy], references: [id])
+  reviewer        User?                @relation("BookingRequestReviewer", fields: [reviewedBy], references: [id])
+
+  @@index([status, createdAt])
+  @@index([createdBy, createdAt])
+}

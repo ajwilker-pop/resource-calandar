@@ -1,0 +1,22 @@
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import authRoutes from "./routes/auth.js";
+import resourceRoutes from "./routes/resources.js";
+import bookingRoutes from "./routes/bookings.js";
+import bookingRequestRoutes from "./routes/bookingRequests.js";
+import userRoutes from "./routes/users.js";
+import { errorHandler } from "./middleware/errors.js";
+
+export const app = express();
+app.use(cors({ origin: process.env.FRONTEND_URL ?? "http://localhost:5173", credentials: true }));
+app.use(express.json());
+app.use(cookieParser());
+app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
+app.use("/api/auth", authRoutes);
+app.use("/api/resources", resourceRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/booking-requests", bookingRequestRoutes);
+app.use("/api/users", userRoutes);
+app.use(errorHandler);
