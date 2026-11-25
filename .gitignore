@@ -1,0 +1,8 @@
+# Dependencies and generated build output
+**/node_modules/
+**/dist/
+backend/.env
+frontend/.env
+backend/prisma/*.db
+backend/prisma/*.db-journal
+*.tsbuildinfo
